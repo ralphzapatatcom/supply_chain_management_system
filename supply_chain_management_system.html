@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain Management 360 System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-800 bg-slate-100 flex flex-col">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main Container -->
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 transition-all duration-300 z-20">
+            <!-- Brand Header -->
+            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950">
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand-500 text-white p-2 rounded-lg flex items-center justify-center font-bold shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid me-0 fa-cubes text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-white text-base leading-tight">SCM 360 Browser</h1>
+                        <p class="text-xs text-slate-400">Enterprise Control</p>
+                    </div>
+                </div>
+                <button id="toggleSidebar" class="text-slate-400 hover:text-white lg:hidden">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-6">
+                <!-- Dashboard Level 1 -->
+                <div>
+                    <div class="px-3 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tablero Global</div>
+                    <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-brand-600 text-white shadow-sm">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>Dashboard General</span>
+                    </button>
+                </div>
+
+                <!-- Data Model Level 2 (12 Modules) -->
+                <div>
+                    <div class="px-3 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Módulos Operativos (12)</div>
+                    <nav class="space-y-1" id="modules-nav-list">
+                        <!-- Navigation items injected dynamically by JS -->
+                    </nav>
+                </div>
+            </div>
+
+            <!-- User Footer -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950/50 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-brand-700 text-white font-bold flex items-center justify-center text-xs">
+                    TN
+                </div>
+                <div class="text-xs overflow-hidden">
+                    <p class="font-semibold text-slate-200 truncate">Tariq Noor | SCM</p>
+                    <p class="text-slate-500 truncate">Supply Chain Director</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+            <!-- Top Header & Filters -->
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10">
+                <div class="flex items-center gap-4">
+                    <button id="mobileMenuBtn" class="text-slate-600 hover:text-slate-900 lg:hidden">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <h2 id="page-title" class="text-xl font-bold text-slate-800">Dashboard General SCM</h2>
+                </div>
+
+                <!-- Global Filters -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                        <label for="filter-month" class="text-xs font-semibold text-slate-600 px-1 flex items-center gap-1">
+                            <i class="fa-regular fa-calendar"></i> Mes:
+                        </label>
+                        <select id="filter-month" onchange="applyGlobalFilters()" class="bg-white text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+                            <option value="May-2024" selected>May-2024</option>
+                            <option value="Jun-2024">Jun-2024</option>
+                            <option value="Jul-2024">Jul-2024</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                        <label for="filter-warehouse" class="text-xs font-semibold text-slate-600 px-1 flex items-center gap-1">
+                            <i class="fa-solid fa-warehouse"></i> Almacún:
+                        </label>
+                        <select id="filter-warehouse" onchange="applyGlobalFilters()" class="bg-white text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+                            <option value="All" selected>Todos (All)</option>
+                            <option value="WH1">WH1 - Almacén Central</option>
+                            <option value="WH2">WH2 - Almacén Norte</option>
+                            <option value="WH3">WH3 - Almacén Sur</option>
+                        </select>
+                    </div>
+
+                    <button onclick="resetDataSeed()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5" title="Restaurar datos iniciales">
+                        <i class="fa-solid fa-rotate-left"></i> Restablecer Datos
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic View Body -->
+            <main class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-100" id="main-content">
+                <!-- Content will be rendered dynamically based on active tab -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Generic Modal for Create / Edit Form -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 transform transition-all">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-brand-500"></i> Registrar / Modificar Datos
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="modal-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <!-- Dynamic Form Controls Generated Here -->
+                <div id="modal-fields-container" class="space-y-4"></div>
+
+                <!-- Anti-Negative Validation Banner -->
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-xs text-amber-800">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5"></i>
+                    <span><strong>Regla de Validación Activa:</strong> El sistema previene automáticamente valores o cantidades negativas (&lt; 0) en los registros operativos.</span>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-md transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // Data Store (Seeded from Analysis Document)
+        let SCM_DATA = {
+            kpis: {
+                purchaseOrders: 8,
+                totalOrders: 5,
+                onTimeDelivery: 75.0,
+                inventoryTurnover: 1.3,
+                totalSupply: 1265540,
+                stockOutRate: 16.7,
+                supplierPerformance: 64.4
+            },
+            modules: {
+                suppliers: [
+                    { id: 1, name: 'Supplier A', category: 'Raw Material', score1: 4.5, score2: 4, score3: 7, score4: 27 },
+                    { id: 2, name: 'Supplier B', category: 'Packaging', score1: 4.0, score2: 7, score3: 26, score4: 0 },
+                    { id: 3, name: 'Supplier C', category: 'Components', score1: 4.7, score2: 6, score3: 26, score4: 0 },
+                    { id: 4, name: 'Supplier D', category: 'Services', score1: 3.8, score2: 10, score3: 24, score4: 0 },
+                    { id: 5, name: 'Supplier E', category: 'Raw Material', score1: 4.2, score2: 8, score3: 23, score4: 0 }
+                ],
+                procurement: [
+                    { id: 1, poNumber: 'PO-2024-101', month: 'May-2024', supplier: 'Supplier A', amount: 25600, status: 'Approved' },
+                    { id: 2, poNumber: 'PO-2024-102', month: 'May-2024', supplier: 'Supplier B', amount: 18500, status: 'Approved' },
+                    { id: 3, poNumber: 'PO-2024-103', month: 'May-2024', supplier: 'Supplier C', amount: 32000, status: 'Pending' },
+                    { id: 4, poNumber: 'PO-2024-104', month: 'May-2024', supplier: 'Supplier D', amount: 12400, status: 'Approved' },
+                    { id: 5, poNumber: 'PO-2024-105', month: 'May-2024', supplier: 'Supplier A', amount: 15750, status: 'Approved' }
+                ],
+                inventory: [
+                    { id: 1, code: 'ITM-1001', name: 'Raw Material A', category: 'Raw Material', stock: 150, warehouse: 'WH1' },
+                    { id: 2, code: 'ITM-1002', name: 'Raw Material B', category: 'Raw Material', stock: 620, warehouse: 'WH1' },
+                    { id: 3, code: 'ITM-1003', name: 'Component C', category: 'Component', stock: 45, warehouse: 'WH2' },
+                    { id: 4, code: 'ITM-1004', name: 'Component D', category: 'Component', stock: 0, warehouse: 'WH2' },
+                    { id: 5, code: 'ITM-1005', name: 'Packaging A', category: 'Packaging', stock: 300, warehouse: 'WH3' }
+                ],
+                demand: [
+                    { id: 1, product: 'Product A', forecast: 1200, actual: 1150, action: 'Monitor' },
+                    { id: 2, product: 'Product B', forecast: 2000, actual: 2250, action: 'Increase Supply' },
+                    { id: 3, product: 'Product C', forecast: 1500, actual: 1300, action: 'Monitor' },
+                    { id: 4, product: 'Product D', forecast: 900, actual: 950, action: 'Monitor' },
+                    { id: 5, product: 'Product E', forecast: 1100, actual: 1050, action: 'Monitor' }
+                ],
+                production: [
+                    { id: 1, wo: 'WO-2401', product: 'Product A', planned: 1000, actual: 950, status: 'In Progress', warehouse: 'WH1' },
+                    { id: 2, wo: 'WO-2402', product: 'Product B', planned: 2000, actual: 2000, status: 'Completed', warehouse: 'WH1' },
+                    { id: 3, wo: 'WO-2403', product: 'Product C', planned: 1500, actual: 700, status: 'In Progress', warehouse: 'WH2' },
+                    { id: 4, wo: 'WO-2404', product: 'Product D', planned: 900, actual: 0, status: 'Planned', warehouse: 'WH2' },
+                    { id: 5, wo: 'WO-2405', product: 'Product E', planned: 1100, actual: 1100, status: 'Completed', warehouse: 'WH3' }
+                ],
+                warehouse: [
+                    { id: 1, whId: 'WH1', location: 'Ubicación A-01-01', itemCode: 'ITM-1001', itemName: 'Raw Material A' },
+                    { id: 2, whId: 'WH1', location: 'Ubicación A-01-02', itemCode: 'ITM-1002', itemName: 'Raw Material B' },
+                    { id: 3, whId: 'WH2', location: 'Ubicación B-02-01', itemCode: 'ITM-1003', itemName: 'Component C' },
+                    { id: 4, whId: 'WH2', location: 'Ubicación B-02-02', itemCode: 'ITM-1004', itemName: 'Component D' },
+                    { id: 5, whId: 'WH3', location: 'Ubicación C-03-01', itemCode: 'ITM-1005', itemName: 'Packaging A' }
+                ],
+                fulfillment: [
+                    { id: 1, orderNo: 'ORD-501', customer: 'Customer A', orderDate: '2024-05-01', status: 'Delivered', deliveryDate: '2024-05-05', warehouse: 'WH1' },
+                    { id: 2, orderNo: 'ORD-502', customer: 'Customer B', orderDate: '2024-05-02', status: 'In Transit', deliveryDate: '2024-05-08', warehouse: 'WH1' },
+                    { id: 3, orderNo: 'ORD-503', customer: 'Customer C', orderDate: '2024-05-02', status: 'Delayed', deliveryDate: '2024-05-10', warehouse: 'WH2' },
+                    { id: 4, orderNo: 'ORD-504', customer: 'Customer D', orderDate: '2024-05-03', status: 'Delivered', deliveryDate: '2024-05-06', warehouse: 'WH2' },
+                    { id: 5, orderNo: 'ORD-505', customer: 'Customer E', orderDate: '2024-05-04', status: 'In Transit', deliveryDate: '2024-05-09', warehouse: 'WH3' }
+                ],
+                cost: [
+                    { id: 1, category: 'Material Cost', thisMonth: 745250, ytd: 3120450, variance: -4.5 },
+                    { id: 2, category: 'Freight Cost', thisMonth: 125400, ytd: 620300, variance: 2.1 },
+                    { id: 3, category: 'Warehouse Cost', thisMonth: 85600, ytd: 410200, variance: -1.2 },
+                    { id: 4, category: 'Labor Cost', thisMonth: 210300, ytd: 1005600, variance: 3.7 },
+                    { id: 5, category: 'Other Cost', thisMonth: 98990, ytd: 459990, variance: -0.8 }
+                ],
+                quality: [
+                    { id: 1, inspectionId: 'INSP-01', item: 'Raw Material A', inspectedQty: 500, rejectedQty: 10 },
+                    { id: 2, inspectionId: 'INSP-02', item: 'Component C', inspectedQty: 300, rejectedQty: 6 },
+                    { id: 3, inspectionId: 'INSP-03', item: 'Packaging A', inspectedQty: 400, rejectedQty: 16 },
+                    { id: 4, inspectionId: 'INSP-04', item: 'Component D', inspectedQty: 250, rejectedQty: 5 },
+                    { id: 5, inspectionId: 'INSP-05', item: 'Raw Material B', inspectedQty: 600, rejectedQty: 8 }
+                ],
+                risk: [
+                    { id: 1, riskId: 'RISK-01', description: 'Supplier Delay', category: 'Supplier', prob: 'High', impact: 'High' },
+                    { id: 2, riskId: 'RISK-02', description: 'Raw Material Shortage', category: 'Inventory', prob: 'Medium', impact: 'High' },
+                    { id: 3, riskId: 'RISK-03', description: 'Transport Delay', category: 'Logistics', prob: 'Medium', impact: 'Medium' },
+                    { id: 4, riskId: 'RISK-04', description: 'Price Fluctuation', category: 'Cost', prob: 'High', impact: 'Medium' },
+                    { id: 5, riskId: 'RISK-05', description: 'Quality Issues', category: 'Quality', prob: 'Medium', impact: 'High' }
+                ],
+                kpiDashboard: [
+                    { id: 1, metric: 'On-Time Delivery Rate', actual: '75.0%', status: 'Monitor', target: '>90%' },
+                    { id: 2, metric: 'Supplier Performance %', actual: '64.4%', status: 'Good', target: '>80%' },
+                    { id: 3, metric: 'Inventory Turnover Ratio', actual: '1.3', status: 'Monitor', target: '2.0' },
+                    { id: 4, metric: 'Order Accuracy %', actual: '96.2%', status: 'Good', target: '95%' },
+                    { id: 5, metric: 'Stock-Out Rate %', actual: '16.7%', status: 'Improve', target: '<5%' }
+                ],
+                scorecard: [
+                    { id: 1, supplier: 'Supplier A', category: 'Raw Material', score: 4.5, rank: 8 },
+                    { id: 2, supplier: 'Supplier B', category: 'Packaging', score: 4.0, rank: 7 },
+                    { id: 3, supplier: 'Supplier C', category: 'Components', score: 4.7, rank: 6 },
+                    { id: 4, supplier: 'Supplier D', category: 'Services', score: 3.8, rank: 10 },
+                    { id: 5, supplier: 'Supplier E', category: 'Raw Material', score: 4.2, rank: 8 }
+                ]
+            }
+        };
+
+        // Current Active Navigation & State
+        let currentTab = 'dashboard';
+        let currentModalState = { module: null, mode: 'add', editId: null };
+
+        // Module Metadata Schema for Automatic Table & Form Rendering
+        const MODULE_SCHEMAS = {
+            suppliers: {
+                title: '1. Supplier Management (Gestión de Proveedores)',
+                icon: 'fa-truck-field',
+                fields: [
+                    { key: 'name', label: 'Nombre Proveedor', type: 'text', required: true },
+                    { key: 'category', label: 'Categoría Insumo', type: 'text', required: true },
+                    { key: 'score1', label: 'Evaluación Técnica (0-5)', type: 'number', min: 0, max: 5, step: 0.1, required: true },
+                    { key: 'score2', label: 'Evaluación Entregas (0-10)', type: 'number', min: 0, max: 10, required: true },
+                    { key: 'score3', label: 'Criterio Calidad (0-30)', type: 'number', min: 0, max: 30, required: true },
+                    { key: 'score4', label: 'Puntuación Total (0-30)', type: 'number', min: 0, max: 30, required: true }
+                ]
+            },
+            procurement: {
+                title: '2. Procurement Management (Gestión de Compras)',
+                icon: 'fa-file-invoice-dollar',
+                fields: [
+                    { key: 'poNumber', label: 'Número PO', type: 'text', required: true },
+                    { key: 'month', label: 'Mes Emisión', type: 'select', options: ['May-2024', 'Jun-2024', 'Jul-2024'], required: true },
+                    { key: 'supplier', label: 'Proveedor', type: 'text', required: true },
+                    { key: 'amount', label: 'Monto ($ USD)', type: 'number', min: 0, step: 100, required: true },
+                    { key: 'status', label: 'Estado PO', type: 'select', options: ['Approved', 'Pending', 'Rejected'], required: true }
+                ]
+            },
+            inventory: {
+                title: '3. Inventory Management (Gestión de Inventario)',
+                icon: 'fa-boxes-stacked',
+                fields: [
+                    { key: 'code', label: 'Código Ítem', type: 'text', required: true },
+                    { key: 'name', label: 'Nombre Ítem', type: 'text', required: true },
+                    { key: 'category', label: 'Categoría Material', type: 'text', required: true },
+                    { key: 'stock', label: 'Stock Disponible (Unidades)', type: 'number', min: 0, required: true },
+                    { key: 'warehouse', label: 'Almacén', type: 'select', options: ['WH1', 'WH2', 'WH3'], required: true }
+                ]
+            },
+            demand: {
+                title: '4. Demand Planning (Planificación de Demanda)',
+                icon: 'fa-chart-line',
+                fields: [
+                    { key: 'product', label: 'Producto', type: 'text', required: true },
+                    { key: 'forecast', label: 'Pronóstico (Forecast)', type: 'number', min: 0, required: true },
+                    { key: 'actual', label: 'Demanda Real (Actual)', type: 'number', min: 0, required: true },
+                    { key: 'action', label: 'Acción Sugerida', type: 'select', options: ['Monitor', 'Increase Supply', 'Reduce Stock'], required: true }
+                ]
+            },
+            production: {
+                title: '5. Production Planning (Planificación de Producción)',
+                icon: 'fa-industry',
+                fields: [
+                    { key: 'wo', label: 'Orden Trab (WO)', type: 'text', required: true },
+                    { key: 'product', label: 'Producto', type: 'text', required: true },
+                    { key: 'planned', label: 'Cant. Planificada', type: 'number', min: 0, required: true },
+                    { key: 'actual', label: 'Cant. Real Producida', type: 'number', min: 0, required: true },
+                    { key: 'status', label: 'Estado Producción', type: 'select', options: ['Planned', 'In Progress', 'Completed'], required: true },
+                    { key: 'warehouse', label: 'Almacén Asignado', type: 'select', options: ['WH1', 'WH2', 'WH3'], required: true }
+                ]
+            },
+            warehouse: {
+                title: '6. Warehouse Management (Gestión de Almacenes)',
+                icon: 'fa-warehouse',
+                fields: [
+                    { key: 'whId', label: 'ID Almacén', type: 'select', options: ['WH1', 'WH2', 'WH3'], required: true },
+                    { key: 'location', label: 'Ubicación Física (Pasillo-Rack)', type: 'text', required: true },
+                    { key: 'itemCode', label: 'Código Ítem', type: 'text', required: true },
+                    { key: 'itemName', label: 'Nombre Ítem', type: 'text', required: true }
+                ]
+            },
+            fulfillment: {
+                title: '7. Order Fulfillment (Cumplimiento de Órdenes)',
+                icon: 'fa-truck-ramp-box',
+                fields: [
+                    { key: 'orderNo', label: 'Número Orden', type: 'text', required: true },
+                    { key: 'customer', label: 'Cliente', type: 'text', required: true },
+                    { key: 'orderDate', label: 'Fecha Orden', type: 'date', required: true },
+                    { key: 'status', label: 'Estado Entrega', type: 'select', options: ['Delivered', 'In Transit', 'Delayed', 'Cancelled'], required: true },
+                    { key: 'deliveryDate', label: 'Fecha Despacho/Entrega', type: 'date', required: true },
+                    { key: 'warehouse', label: 'Almacén Origen', type: 'select', options: ['WH1', 'WH2', 'WH3'], required: true }
+                ]
+            },
+            cost: {
+                title: '8. Cost Management (Control de Costos)',
+                icon: 'fa-sack-dollar',
+                fields: [
+                    { key: 'category', label: 'Categoría de Costo', type: 'text', required: true },
+                    { key: 'thisMonth', label: 'Gasto Este Mes ($)', type: 'number', min: 0, step: 100, required: true },
+                    { key: 'ytd', label: 'Acumulado YTD ($)', type: 'number', min: 0, step: 500, required: true },
+                    { key: 'variance', label: 'Varianza (%)', type: 'number', step: 0.1, required: true }
+                ]
+            },
+            quality: {
+                title: '9. Quality Management (Gestión de Calidad)',
+                icon: 'fa-clipboard-check',
+                fields: [
+                    { key: 'inspectionId', label: 'ID Inspección', type: 'text', required: true },
+                    { key: 'item', label: 'Ítem Reviso', type: 'text', required: true },
+                    { key: 'inspectedQty', label: 'Cant. Inspeccionada', type: 'number', min: 0, required: true },
+                    { key: 'rejectedQty', label: 'Cant. Rechazada', type: 'number', min: 0, required: true }
+                ]
+            },
+            risk: {
+                title: '10. Risk Management (Gestión de Riesgos)',
+                icon: 'fa-shield-halved',
+                fields: [
+                    { key: 'riskId', label: 'ID Riesgo', type: 'text', required: true },
+                    { key: 'description', label: 'Descripción Riesgo', type: 'text', required: true },
+                    { key: 'category', label: 'Categoría', type: 'select', options: ['Supplier', 'Inventory', 'Logistics', 'Cost', 'Quality'], required: true },
+                    { key: 'prob', label: 'Probabilidad', type: 'select', options: ['Low', 'Medium', 'High'], required: true },
+                    { key: 'impact', label: 'Impacto', type: 'select', options: ['Low', 'Medium', 'High'], required: true }
+                ]
+            },
+            kpiDashboard: {
+                title: '11. Integrated KPI Dashboard (Tablero de Control)',
+                icon: 'fa-gauge-high',
+                fields: [
+                    { key: 'metric', label: 'Métrica KPI', type: 'text', required: true },
+                    { key: 'actual', label: 'Valor Real Actual', type: 'text', required: true },
+                    { key: 'target', label: 'Meta Institucional', type: 'text', required: true },
+                    { key: 'status', label: 'Estado / Indicador', type: 'select', options: ['Good', 'Monitor', 'Improve', 'Watch'], required: true }
+                ]
+            },
+            scorecard: {
+                title: '12. Supplier Scorecard (Evaluación de Proveedores)',
+                icon: 'fa-star',
+                fields: [
+                    { key: 'supplier', label: 'Nombre Proveedor', type: 'text', required: true },
+                    { key: 'category', label: 'Categoría Material', type: 'text', required: true },
+                    { key: 'score', label: 'Rating Global (0 - 5.0)', type: 'number', min: 0, max: 5, step: 0.1, required: true },
+                    { key: 'rank', label: 'Ranking / Índice', type: 'number', min: 0, required: true }
+                ]
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            buildNavigation();
+            recalculateGlobalKPIs();
+            renderDashboard();
+
+            // Setup Mobile Menu Toggle
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            });
+            document.getElementById('toggleSidebar').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            });
+        });
+
+        // Show Toast Notifications
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-600',
+                error: 'bg-rose-600',
+                warning: 'bg-amber-500',
+                info: 'bg-brand-600'
+            };
+
+            const icons = {
+                success: 'fa-circle-check',
+                error: 'fa-circle-xmark',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+
+            toast.className = `${bgColors[type]} text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type]} text-lg"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Build Sidebar Links Dynamically
+        function buildNavigation() {
+            const navList = document.getElementById('modules-nav-list');
+            navList.innerHTML = '';
+
+            Object.keys(MODULE_SCHEMAS).forEach(key => {
+                const module = MODULE_SCHEMAS[key];
+                const btn = document.createElement('button');
+                btn.id = `nav-${key}`;
+                btn.onclick = () => navigateTo(key);
+                btn.className = `nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-slate-400 hover:bg-slate-800 hover:text-white`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5 truncate">
+                        <i class="fa-solid ${module.icon} w-4 text-center"></i>
+                        <span class="truncate">${module.title.split(' (')[0]}</span>
+                    </div>
+                    <span class="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded text-[10px]">${SCM_DATA.modules[key].length}</span>
+                `;
+                navList.appendChild(btn);
+            });
+        }
+
+        // Handle Router Navigation
+        function navigateTo(tabKey) {
+            currentTab = tabKey;
+
+            // Highlight Active Nav Item
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-brand-600', 'text-white', 'shadow-sm');
+                el.classList.add('text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabKey}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow-sm');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            // Update Page Title
+            if (tabKey === 'dashboard') {
+                document.getElementById('page-title').innerText = 'Dashboard General SCM';
+                renderDashboard();
+            } else {
+                document.getElementById('page-title').innerText = MODULE_SCHEMAS[tabKey].title;
+                renderModuleView(tabKey);
+            }
+        }
+
+        // Global Filter Trigger
+        function applyGlobalFilters() {
+            recalculateGlobalKPIs();
+            if (currentTab === 'dashboard') {
+                renderDashboard();
+            } else {
+                renderModuleView(currentTab);
+            }
+            showNotification('Filtros aplicados correctamente', 'info');
+        }
+
+        // Recalculate KPIs based on internal dataset
+        function recalculateGlobalKPIs() {
+            const whFilter = document.getElementById('filter-warehouse').value;
+
+            // Filter procurement
+            const pos = SCM_DATA.modules.procurement;
+            SCM_DATA.kpis.purchaseOrders = pos.length;
+
+            // Filter Orders
+            let orders = SCM_DATA.modules.fulfillment;
+            if (whFilter !== 'All') {
+                orders = orders.filter(o => o.warehouse === whFilter);
+            }
+            SCM_DATA.kpis.totalOrders = orders.length;
+
+            // Calculate On-Time Delivery
+            if (orders.length > 0) {
+                const deliveredOnTime = orders.filter(o => o.status === 'Delivered').length;
+                SCM_DATA.kpis.onTimeDelivery = ((deliveredOnTime / orders.length) * 100).toFixed(1);
+            } else {
+                SCM_DATA.kpis.onTimeDelivery = '0.0';
+            }
+
+            // Calculate Stock Out Rate
+            let items = SCM_DATA.modules.inventory;
+            if (whFilter !== 'All') {
+                items = items.filter(i => i.warehouse === whFilter);
+            }
+            if (items.length > 0) {
+                const zeroStock = items.filter(i => Number(i.stock) === 0).length;
+                SCM_DATA.kpis.stockOutRate = ((zeroStock / items.length) * 100).toFixed(1);
+            } else {
+                SCM_DATA.kpis.stockOutRate = '0.0';
+            }
+
+            // Total Supply Cost
+            const totalCost = SCM_DATA.modules.cost.reduce((sum, item) => sum + Number(item.thisMonth), 0);
+            SCM_DATA.kpis.totalSupply = totalCost;
+
+            // Supplier Performance Average Scorecard
+            const scores = SCM_DATA.modules.scorecard;
+            if (scores.length > 0) {
+                const avgScore = scores.reduce((sum, s) => sum + Number(s.score), 0) / scores.length;
+                SCM_DATA.kpis.supplierPerformance = ((avgScore / 5) * 100).toFixed(1);
+            }
+        }
+
+        // Restore Initial Data
+        function resetDataSeed() {
+            if (confirm('¿Está seguro de restaurar los datos del informe original?')) {
+                location.reload();
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // VIEW RENDERERS (DASHBOARD & MODULES)
+        // ---------------------------------------------------------------------
+
+        function renderDashboard() {
+            recalculateGlobalKPIs();
+            const main = document.getElementById('main-content');
+
+            main.innerHTML = `
+                <!-- Executive KPI Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">Purchase Orders</span>
+                            <i class="fa-solid fa-file-signature text-brand-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-extrabold text-slate-800">${SCM_DATA.kpis.purchaseOrders}</span>
+                            <span class="text-xs text-emerald-600 font-medium block mt-1"><i class="fa-solid fa-arrow-up"></i> 8 OCs Activas</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">Total Orders</span>
+                            <i class="fa-solid fa-box text-blue-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-extrabold text-slate-800">${SCM_DATA.kpis.totalOrders}</span>
+                            <span class="text-xs text-slate-500 block mt-1">Órdenes Clientes</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">On-Time Delivery</span>
+                            <i class="fa-solid fa-clock-rotate-left text-amber-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-extrabold text-slate-800">${SCM_DATA.kpis.onTimeDelivery}%</span>
+                            <span class="text-xs text-amber-600 font-medium block mt-1"><i class="fa-solid fa-triangle-exclamation"></i> Meta: &gt;90%</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">Inv. Turnover</span>
+                            <i class="fa-solid fa-arrows-spin text-purple-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-extrabold text-slate-800">${SCM_DATA.kpis.inventoryTurnover}</span>
+                            <span class="text-xs text-slate-500 block mt-1">Rotación Moderada</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">Total Supply</span>
+                            <i class="fa-solid fa-dollar-sign text-emerald-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-xl font-extrabold text-slate-800">$${Number(SCM_DATA.kpis.totalSupply).toLocaleString()}</span>
+                            <span class="text-xs text-emerald-600 font-medium block mt-1">Gasto Mensual</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">Stock-Out Rate</span>
+                            <i class="fa-solid fa-circle-exclamation text-rose-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-extrabold text-rose-600">${SCM_DATA.kpis.stockOutRate}%</span>
+                            <span class="text-xs text-rose-600 font-medium block mt-1"><i class="fa-solid fa-arrow-up font-bold"></i> Alerta Crítica</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-semibold uppercase">Supplier Perf.</span>
+                            <i class="fa-solid fa-award text-indigo-500 text-base"></i>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-extrabold text-slate-800">${SCM_DATA.kpis.supplierPerformance}%</span>
+                            <span class="text-xs text-slate-500 block mt-1">Desempeño Prom.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    
+                    <!-- Chart 1: Order Fulfillment Status (Donut) -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-pie text-brand-500 me-2"></i>Estado de Cumplimiento de Órdenes (Order Fulfillment Status)</span>
+                            <span class="text-xs font-normal text-slate-400">Órdenes Clientes</span>
+                        </h3>
+                        <div class="flex flex-col sm:flex-row items-center justify-around gap-4 h-64">
+                            <svg viewBox="0 0 36 36" class="w-48 h-48 transform -rotate-90">
+                                <!-- Circle segments based on Order Fulfillment data -->
+                                <path stroke-dasharray="40, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#0284c7" stroke-width="3.8"/>
+                                <path stroke-dasharray="40, 100" stroke-dashoffset="-40" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="3.8"/>
+                                <path stroke-dasharray="20, 100" stroke-dashoffset="-80" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f59e0b" stroke-width="3.8"/>
+                            </svg>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-brand-500"></span>
+                                    <span class="font-medium text-slate-700">Delivered (Entregado): 40%</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                    <span class="font-medium text-slate-700">In Transit (En Tránsito): 40%</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                                    <span class="font-medium text-slate-700">Delayed (Retrasado): 20%</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-slate-300"></span>
+                                    <span class="font-medium text-slate-700">Cancelled: 0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Top 5 Suppliers Performance (Horizontal Bar Chart) -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-bar text-indigo-500 me-2"></i>Top 5 Suppliers Performance (Score Rating)</span>
+                            <span class="text-xs font-normal text-slate-400">Escala 0 - 5.0</span>
+                        </h3>
+                        <div class="space-y-3.5 h-64 flex flex-col justify-center">
+                            ${SCM_DATA.modules.scorecard.map(sup => {
+                                const percent = (sup.score / 5) * 100;
+                                return `
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                                            <span>${sup.supplier} (${sup.category})</span>
+                                            <span>${sup.score} / 5.0</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                            <div class="bg-indigo-600 h-3 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Costs & PO Trend Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Cost Breakdown Bar Chart -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-coins text-emerald-500 me-2"></i>Monthly Supply Chain Cost Breakdown ($)</span>
+                            <span class="text-xs font-normal text-slate-400">Este Mes</span>
+                        </h3>
+                        <div class="space-y-3 h-64 flex flex-col justify-center">
+                            ${SCM_DATA.modules.cost.map(c => {
+                                const maxCost = Math.max(...SCM_DATA.modules.cost.map(x => x.thisMonth));
+                                const percent = (c.thisMonth / maxCost) * 100;
+                                return `
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                                            <span>${c.category}</span>
+                                            <span>$${Number(c.thisMonth).toLocaleString()}</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                            <div class="bg-emerald-500 h-3 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Strategic Business Diagnosis Banner derived from document -->
+                    <div class="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 text-amber-400 font-bold text-sm mb-3">
+                                <i class="fa-solid fa-lightbulb"></i> Diagnóstico de Negocio & Recomendaciones Estratégicas
+                            </div>
+                            <ul class="text-xs text-slate-300 space-y-2.5">
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-circle-chevron-right text-brand-400 mt-0.5"></i>
+                                    <span><strong>Alerta Stock-Out:</strong> Component D (ITM-1004) en stock cero. Afecta directamente la orden de trabajo WO-2404.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-circle-chevron-right text-brand-400 mt-0.5"></i>
+                                    <span><strong>Mejora Entregas:</strong> Un 25% de órdenes presentan demoras (ORD-503). Reevaluar los SLAs de transporte.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-circle-chevron-right text-brand-400 mt-0.5"></i>
+                                    <span><strong>Auditoría Proveedores:</strong> Supplier D presenta puntuación baja (3.8/5.0). Reasignar volumen a Supplier C (4.7/5.0).</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+                            <span>Informe SCM Template22</span>
+                            <span class="text-brand-400 font-semibold">Tariq Noor SCM Model</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generic Table & CRUD View Renderer for All 12 Modules
+        function renderModuleView(moduleKey) {
+            const schema = MODULE_SCHEMAS[moduleKey];
+            const dataset = SCM_DATA.modules[moduleKey];
+            const main = document.getElementById('main-content');
+
+            main.innerHTML = `
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <!-- Module Bar Header -->
+                    <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid ${schema.icon} text-brand-600"></i> ${schema.title}
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Administración completa, edición de campos y validación de cantidades no negativas.</p>
+                        </div>
+                        <button onclick="openModal('${moduleKey}', 'add')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2 self-start sm:self-auto">
+                            <i class="fa-solid fa-plus"></i> Agregar Nuevo Registro
+                        </button>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                    <th class="py-3 px-4"># ID</th>
+                                    ${schema.fields.map(f => `<th class="py-3 px-4">${f.label}</th>`).join('')}
+                                    <th class="py-3 px-4 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 text-xs text-slate-700">
+                                ${dataset.length === 0 ? `
+                                    <tr>
+                                        <td colspan="${schema.fields.length + 2}" class="text-center py-8 text-slate-400 font-medium">
+                                            No hay registros disponibles en este módulo.
+                                        </td>
+                                    </tr>
+                                ` : dataset.map((row, index) => `
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="py-3 px-4 font-mono font-bold text-slate-500">${row.id}</td>
+                                        ${schema.fields.map(f => {
+                                            let val = row[f.key];
+                                            let badgeClass = '';
+                                            if (f.key === 'status') {
+                                                if (['Approved', 'Delivered', 'Completed', 'Good'].includes(val)) badgeClass = 'bg-emerald-100 text-emerald-700';
+                                                else if (['Pending', 'In Progress', 'Monitor'].includes(val)) badgeClass = 'bg-amber-100 text-amber-700';
+                                                else badgeClass = 'bg-rose-100 text-rose-700';
+                                                return `<td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${val}</span></td>`;
+                                            }
+                                            if (f.key === 'amount' || f.key === 'thisMonth' || f.key === 'ytd') {
+                                                return `<td class="py-3 px-4 font-semibold text-slate-900">$${Number(val).toLocaleString()}</td>`;
+                                            }
+                                            return `<td class="py-3 px-4">${val !== undefined ? val : '-'}</td>`;
+                                        }).join('')}
+                                        <td class="py-3 px-4 text-right">
+                                            <div class="flex items-center justify-end gap-2">
+                                                <button onclick="openModal('${moduleKey}', 'edit', ${row.id})" class="p-1.5 text-brand-600 hover:bg-brand-50 rounded transition" title="Editar / Actualizar">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button onclick="deleteRecord('${moduleKey}', ${row.id})" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition" title="Eliminar">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ---------------------------------------------------------------------
+        // MODAL & FORM HANDLERS (VALIDATION & CRUD)
+        // ---------------------------------------------------------------------
+
+        function openModal(moduleKey, mode = 'add', editId = null) {
+            currentModalState = { module: moduleKey, mode, editId };
+            const schema = MODULE_SCHEMAS[moduleKey];
+            const container = document.getElementById('modal-fields-container');
+            const title = document.getElementById('modal-title');
+
+            title.innerText = mode === 'add' ? `Agregar Nuevo - ${schema.title.split(' (')[0]}` : `Modificar Record #${editId}`;
+            container.innerHTML = '';
+
+            let existingData = {};
+            if (mode === 'edit') {
+                existingData = SCM_DATA.modules[moduleKey].find(item => item.id === editId) || {};
+            }
+
+            schema.fields.forEach(f => {
+                const formGroup = document.createElement('div');
+                const val = existingData[f.key] !== undefined ? existingData[f.key] : '';
+
+                if (f.type === 'select') {
+                    formGroup.innerHTML = `
+                        <label class="block text-xs font-bold text-slate-700 mb-1">${f.label}</label>
+                        <select name="${f.key}" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none" ${f.required ? 'required' : ''}>
+                            ${f.options.map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                        </select>
+                    `;
+                } else {
+                    const minAttr = f.min !== undefined ? `min="${f.min}"` : '';
+                    const maxAttr = f.max !== undefined ? `max="${f.max}"` : '';
+                    const stepAttr = f.step ? `step="${f.step}"` : '';
+
+                    formGroup.innerHTML = `
+                        <label class="block text-xs font-bold text-slate-700 mb-1">${f.label}</label>
+                        <input type="${f.type}" name="${f.key}" value="${val}" ${minAttr} ${maxAttr} ${stepAttr} 
+                            class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                            oninput="validateNonNegativeInput(this)" ${f.required ? 'required' : ''} />
+                    `;
+                }
+                container.appendChild(formGroup);
+            });
+
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // Real-Time Input Guard against Negative Numbers
+        function validateNonNegativeInput(input) {
+            if (input.type === 'number') {
+                const val = parseFloat(input.value);
+                if (val < 0) {
+                    input.value = 0;
+                    showNotification('¡Error! No se permiten cantidades o números negativos en la plantilla.', 'error');
+                }
+            }
+        }
+
+        // Form Submission Processor (Create & Update)
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const { module, mode, editId } = currentModalState;
+            const schema = MODULE_SCHEMAS[module];
+
+            const record = {};
+            let hasValidationError = false;
+
+            schema.fields.forEach(f => {
+                let val = formData.get(f.key);
+                if (f.type === 'number') {
+                    val = Number(val);
+                    if (val < 0) {
+                        hasValidationError = true;
+                    }
+                }
+                record[f.key] = val;
+            });
+
+            if (hasValidationError) {
+                showNotification('Validación Fallida: No puede ingresar valores negativos.', 'error');
+                return;
+            }
+
+            if (mode === 'add') {
+                const maxId = SCM_DATA.modules[module].reduce((max, i) => i.id > max ? i.id : max, 0);
+                record.id = maxId + 1;
+                SCM_DATA.modules[module].push(record);
+                showNotification('Registro creado con éxito', 'success');
+            } else {
+                const index = SCM_DATA.modules[module].findIndex(i => i.id === editId);
+                if (index !== -1) {
+                    record.id = editId;
+                    SCM_DATA.modules[module][index] = record;
+                    showNotification('Registro actualizado correctamente', 'success');
+                }
+            }
+
+            closeModal();
+            buildNavigation();
+            recalculateGlobalKPIs();
+            renderModuleView(module);
+        }
+
+        // Delete Operation with Safety Confirmation
+        function deleteRecord(moduleKey, id) {
+            if (confirm(`¿Confirma que desea eliminar el registro #${id} de este módulo?`)) {
+                SCM_DATA.modules[moduleKey] = SCM_DATA.modules[moduleKey].filter(item => item.id !== id);
+                showNotification(`Registro #${id} eliminado`, 'warning');
+                buildNavigation();
+                recalculateGlobalKPIs();
+                renderModuleView(moduleKey);
+            }
+        }
+    </script>
+</body>
+</html>
